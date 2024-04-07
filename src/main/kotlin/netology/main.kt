@@ -16,6 +16,15 @@ data class Post(
     val attachments: Array<Attachment>? = null,
 )
 
+data class Note(
+    val id: Int,
+    val title: String,
+    val text: String,
+    val comments: MutableList<Comment> = mutableListOf(),
+    var deleted: Boolean = false
+)
+
+class NoteNotFoundException(message: String) : Exception(message)
 class PostNotFoundException(message: String) : Exception(message)
 
 interface Attachment {
@@ -136,4 +145,64 @@ object WallService {
     }
 }
 
+object NoteService {
 
+    private var nextId = 1
+    private var notes = emptyArray<Note>()
+
+    fun add(note: Note): Note {
+        val newNote = note.copy(id = nextId++)
+        notes += newNote
+        return newNote
+    }
+
+    fun update(note: Note): Boolean {
+        val index = notes.indexOfFirst { it.id == note.id }
+        if (index != -1) {
+            notes = notes.copyOf()
+            notes[index] = note
+            return true
+        }
+        return false
+    }
+
+    fun createComment(noteId: Int, comment: Comment): Comment {
+        try {
+            val note = notes.first { it.id == noteId }
+            val newComment = comment.copy(id = note.comments.size + 1)
+            note.comments.add(newComment)
+            return newComment
+        } catch (e: NoSuchElementException) {
+            throw NoteNotFoundException("Заметки с таким Id $noteId не существует.")
+        }
+    }
+
+    fun delete(noteId: Int): Boolean {
+        val index = notes.indexOfFirst { it.id == noteId }
+        if (index != -1) {
+            notes[index].deleted = true
+            return true
+        }
+        return false
+    }
+
+    fun restore(noteId: Int): Boolean {
+        val index = notes.indexOfFirst { it.id == noteId }
+        if (index != -1) {
+            notes[index].deleted = false
+            return true
+        }
+        return false
+    }
+
+    // Метод возвращает заметку по ее id при условии что она не была удалена, если заметка удалена то возвращается null
+    fun getNoteById(id: Int): Note? {
+        return notes.find { it.id == id && !it.deleted }
+    }
+
+    fun clear() {
+        notes = emptyArray()
+        nextId = 1
+    }
+
+}
