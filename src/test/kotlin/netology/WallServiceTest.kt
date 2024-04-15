@@ -39,7 +39,7 @@ class wallServiceTest {
     fun shouldAddCommentToTheCorrectPost() {
 
         val post = Post(1, 1, date = 1617289322, text = "Test post")
-        val comment = Comment(1, 2, date = 1617289323, text = "Test comment")
+        val comment = Comment(1, 2, 1, date = 1617289323, text = "Test comment")
 
         WallService.add(post)
         WallService.createComment(post.id, comment)
@@ -48,7 +48,7 @@ class wallServiceTest {
 
     @Test(expected = PostNotFoundException::class)
     fun throwExceptionAddCommentToNonExistentPost() {
-        val comment = Comment(1, 2, date = 1617289323, text = "Test comment")
+        val comment = Comment(1, 2, 1, date = 1617289323, text = "Test comment")
 
         WallService.createComment(999, comment)
     }

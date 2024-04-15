@@ -18,6 +18,7 @@ data class Post(
 
 data class Note(
     val id: Int,
+    val ownerId: Int,
     val title: String,
     val text: String,
     val comments: MutableList<Comment> = mutableListOf(),
@@ -100,11 +101,14 @@ data class Geo(
 data class Comment(
     val id: Int,
     val from_id: Int,
+    val postId: Int,
     val date: Int,
-    val text: String,
+    var text: String,
     val count: Int = 0,
     val canPost: Boolean = false,
-)
+    var deleted: Boolean = false,
+
+    )
 
 object WallService {
 
@@ -175,6 +179,45 @@ object NoteService {
         } catch (e: NoSuchElementException) {
             throw NoteNotFoundException("Заметки с таким Id $noteId не существует.")
         }
+    }
+
+    fun editComment(commentId: Int, newText: String): Boolean {
+        val comment = notes.flatMap { it.comments }.find { it.id == commentId && !it.deleted }
+        return if (comment != null) {
+            comment.text = newText
+            true
+        } else {
+            false
+        }
+    }
+
+    fun deleteComment(commentId: Int): Boolean {
+        val comment = notes.flatMap { it.comments }.find { it.id == commentId && !it.deleted }
+        return if (comment != null) {
+            comment.deleted = true
+            true
+        } else {
+            false
+        }
+    }
+
+    fun restoreComment(commentId: Int): Boolean {
+        val comment = notes.flatMap { it.comments }.find { it.id == commentId && it.deleted }
+        return if (comment != null) {
+            comment.deleted = false
+            true
+        } else {
+            false
+        }
+    }
+
+    fun getCommentsForNote(noteId: Int): List<Comment> {
+        val note = notes.find { it.id == noteId }
+        return note?.comments?.filter { !it.deleted } ?: emptyList()
+    }
+
+    fun getUserNotes(userId: Int): List<Note> {
+        return notes.filter { it.ownerId == userId && !it.deleted }
     }
 
     fun delete(noteId: Int): Boolean {
